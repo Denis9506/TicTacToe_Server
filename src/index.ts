@@ -43,10 +43,10 @@ io.on(
             playerName => {
 
                 const result =
-                    gameService
-                        .createGame(
-                            playerName
-                        );
+                    gameService.createGame(
+                        socket.id,
+                        playerName
+                    );
 
                 socket.join(
                     result.gameId
@@ -68,8 +68,11 @@ io.on(
                     const result =
                         gameService.joinGame(
                             data.gameId,
+                            socket.id,
                             data.playerName
                         );
+
+                    socket.join(data.gameId);
 
                     socket.emit(
                         'joinedGame',
@@ -97,12 +100,11 @@ io.on(
             'makeMove',
             data => {
 
-                gameService
-                    .makeMove(
-                        data.gameId,
-                        data.player,
-                        data.position
-                    );
+                gameService.makeMove(
+                    data.gameId,
+                    socket.id,
+                    data.position
+                );
 
                 const game =
                     gameService
@@ -122,6 +124,24 @@ io.on(
         socket.on(
             'disconnect',
             () => {
+
+                const gameId =
+                    gameService.removePlayer(
+                        socket.id
+                    );
+
+                if (gameId) {
+
+                    const game =
+                        gameService.getGame(
+                            gameId
+                        );
+
+                    io.to(gameId).emit(
+                        'gameUpdated',
+                        game
+                    );
+                }
 
                 console.log(
                     'Disconnected:',
